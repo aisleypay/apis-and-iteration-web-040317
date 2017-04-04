@@ -4,7 +4,7 @@ end
 
 def get_subject_from_user
   puts "What would you like to learn about Star Wars?"
-  subject_array = %w(people planets vehicles species startships)
+  subject_array = %w(people planets vehicles species starships)
   puts "You can only choose: people, planets, vehicles, species, or starships"
 
   subject = gets.chomp.downcase

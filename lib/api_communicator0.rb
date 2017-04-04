@@ -5,23 +5,16 @@ require 'pry'
 def get_movies_from_api(subject, specific_subject)
   subject_hash = nil
 
-  case subject
-  when "people"
-    all_subjects = RestClient.get('http://www.swapi.co/api/people/')
-      subject_hash = JSON.parse(all_subjects)
+  url = 'http://www.swapi.co/api/' + subject
+  all_subjects = RestClient.get(url)
+  subject_hash = JSON.parse(all_subjects)
 
-  when "planets"
-    all_subjects = RestClient.get('http://www.swapi.co/api/planets/')
-      subject_hash = JSON.parse(all_subjects)
-  when "vehicles"
-    all_subjects = RestClient.get('http://www.swapi.co/api/vehicles/')
-      subject_hash = JSON.parse(all_subjects)
-  when "species"
-    all_subjects = RestClient.get('http://www.swapi.co/api/species/')
-      subject_hash = JSON.parse(all_subjects)
-  when "starships"
-    all_subjects = RestClient.get('http://www.swapi.co/api/starships/')
-      subject_hash = JSON.parse(all_subjects)
+  until subject_hash["next"] == nil
+    all_subjects = RestClient.get(subject_hash["next"])
+    next_page = JSON.parse(all_subjects)
+
+    next_page["results"].each { |e| subject_hash["results"] << e }
+    subject_hash["next"] = next_page["next"]
   end
 
   films = nil
@@ -41,20 +34,30 @@ end
 def attribute_converter (attribute, info)
   puts "#{attribute.capitalize}:"
   puts
+  if info.empty?
+    puts "Sorry, none existed in this episode."
+    puts
+  else
   info.each { |individual_subject|
     puts JSON.parse(RestClient.get(individual_subject))["name"]
   }
   puts
+
+  end
 end
 
 def parse_character_movies(films_hash)
-  # some iteration magic and puts out the movies in a nice list
+  roman = {1 =>"I" , 2 =>"II" , 3 =>"III", 4 =>"IV", 5 =>"V", 6 =>"VI", 7 =>"VII"}
+
   films_hash.each { |film|
     puts "*" * 30
     film.each { |attribute, info|
       case attribute
+      when "episode_id"
+        puts "Episode #{roman[info]}"
+        puts
       when "opening_crawl"
-        puts "#{attribute.capitalize}:\n\n#{info.center(60)}"
+        puts "Opening Crawl:\n\n#{info.center(60)}"
         puts
       when "characters", "planets" ,"starships", "vehicles", "species"
       attribute_converter(attribute, info)
@@ -64,6 +67,7 @@ def parse_character_movies(films_hash)
       end
     }
   }
+
 end
 
 def show_character_movies(subject, specific_subject)
